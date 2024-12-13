@@ -35,13 +35,13 @@ camRgb.preview.link(frameOut.input)
 
 # 1080x1080 -> 384x384 required by the model
 scale_manip = pipeline.create(dai.node.ImageManip)
-scale_manip.initialConfig.setResize(384,384)
+scale_manip.initialConfig.setResize(512,512)
 scale_manip.initialConfig.setFrameType(dai.ImgFrame.Type.GRAY8)
 camRgb.preview.link(scale_manip.inputImage)
 
 nn = pipeline.create(dai.node.MobileNetDetectionNetwork)
 nn.setConfidenceThreshold(0.3)
-nn.setBlobPath(blobconverter.from_zoo(name="qr_code_detection_384x384", zoo_type="depthai", shaves=6))
+nn.setBlobPath("models/qrdet-512x512_n_openvino_2022.1_6shave.blob")
 nn.input.setQueueSize(1)
 nn.input.setBlocking(False)
 scale_manip.out.link(nn.input)
