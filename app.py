@@ -27,7 +27,7 @@ camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
 camRgb.setPreviewSize(1080,1080)
 camRgb.setInterleaved(False)
 camRgb.initialControl.setManualFocus(145)
-camRgb.setFps(60)
+camRgb.setFps(2)
 
 frameOut = pipeline.create(dai.node.XLinkOut)
 frameOut.setStreamName("color")
