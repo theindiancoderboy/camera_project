@@ -36,7 +36,7 @@ camRgb.preview.link(frameOut.input)
 # 1080x1080 -> 384x384 required by the model
 scale_manip = pipeline.create(dai.node.ImageManip)
 scale_manip.initialConfig.setResize(512,512)
-scale_manip.initialConfig.setFrameType(dai.ImgFrame.Type.GRAY8)
+scale_manip.initialConfig.setFrameType(dai.ImgFrame.Type.BGR888)
 camRgb.preview.link(scale_manip.inputImage)
 
 nn = pipeline.create(dai.node.MobileNetDetectionNetwork)
