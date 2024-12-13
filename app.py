@@ -25,7 +25,7 @@ pipeline = dai.Pipeline()
 camRgb = pipeline.create(dai.node.ColorCamera)
 camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
 camRgb.setPreviewSize(1080,1080)
-camRgb.setInterleaved(False)
+camRgb.setInterleaved(True)
 camRgb.initialControl.setManualFocus(145)
 camRgb.setFps(2)
 
