@@ -2,7 +2,7 @@ import cv2
 import depthai as dai
 import numpy as np
 import blobconverter
-
+import zxingcpp
 DECODE = True
 
 class TextHelper:
@@ -59,13 +59,9 @@ with dai.Device(pipeline) as device:
 
     def decode(frame, bbox, detector = None):
         img = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
-        data, vertices_array, binary_qrcode = detector.detectAndDecode(img)
-        if data:
-            print("Decoded text", data)
-            return data
-        else:
-            print("Decoding failed")
-            return ""
+        results = zxingcpp.read_barcodes(img)
+        data = [result.text for result in results]
+        print(data)
 
     def expandDetection(det, percent=2):
         percent /= 100
