@@ -1,7 +1,6 @@
 import cv2
 import depthai as dai
 import numpy as np
-import blobconverter
 
 class TextHelper:
     def __init__(self):
@@ -97,13 +96,14 @@ with dai.Device(pipeline) as device:
             try:
                 window_resized = cv2.resize(window, window_size, interpolation=cv2.INTER_AREA)
                 img_frame = dai.ImgFrame()
-                img_frame.setData(window_resized)  # Pass numpy ndarray directly, not raw bytes
+                img_frame.setData(window_resized)  # Pass numpy ndarray directly
                 img_frame.setWidth(window_size[0])
                 img_frame.setHeight(window_size[1])
                 img_frame.setType(dai.ImgFrame.Type.BGR888p)
 
                 # Send the window to the neural network
-                device.getInputQueue("nn").send(img_frame)
+                nnInputQueue = device.getInputQueue("nn", maxSize=1, blocking=False)
+                nnInputQueue.send(img_frame)
 
                 # Get detections for the window
                 inDet = qDet.tryGet()
