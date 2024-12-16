@@ -42,7 +42,7 @@ camRgb.video.link(scale_manip.inputImage)
 # Neural network node
 nn = pipeline.create(dai.node.MobileNetDetectionNetwork)
 nn.setConfidenceThreshold(0.3)
-nn.setBlobPath("model/qrdet-512x512_n_openvino_2022.1_6shave.blob")  # Update with your model path
+nn.setBlobPath("model/qr_model_512x288_rvc2_openvino_2022.1_6shave.blob")  # Update with your model path
 nn.input.setQueueSize(1)
 nn.input.setBlocking(False)
 scale_manip.out.link(nn.input)
