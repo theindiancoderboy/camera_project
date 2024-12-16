@@ -97,7 +97,7 @@ with dai.Device(pipeline) as device:
             try:
                 window_resized = cv2.resize(window, window_size, interpolation=cv2.INTER_AREA)
                 img_frame = dai.ImgFrame()
-                img_frame.setData(window_resized.tobytes())
+                img_frame.setData(window_resized)  # Pass numpy ndarray directly, not raw bytes
                 img_frame.setWidth(window_size[0])
                 img_frame.setHeight(window_size[1])
                 img_frame.setType(dai.ImgFrame.Type.BGR888p)
