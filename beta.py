@@ -33,16 +33,16 @@ frameOut = pipeline.create(dai.node.XLinkOut)
 frameOut.setStreamName("color")
 camRgb.video.link(frameOut.input)
 
-# Scaled down 512x512 chunks for inference
+# Scaled down 512x288 chunks for inference
 scale_manip = pipeline.create(dai.node.ImageManip)
-scale_manip.initialConfig.setResize(512, 512)
+scale_manip.initialConfig.setResize(512, 288)
 scale_manip.initialConfig.setFrameType(dai.ImgFrame.Type.BGR888p)
 camRgb.video.link(scale_manip.inputImage)
 
 # Neural network node
 nn = pipeline.create(dai.node.MobileNetDetectionNetwork)
 nn.setConfidenceThreshold(0.3)
-nn.setBlobPath("model/qr_model_512x288_rvc2_openvino_2022.1_6shave.blob")  # Update with your model path
+nn.setBlobPath("model/qrdet-512x288_openvino_2022.1_5shave.blob")  # Update with your model path
 nn.input.setQueueSize(1)
 nn.input.setBlocking(False)
 scale_manip.out.link(nn.input)
@@ -70,10 +70,10 @@ def frameNorm(frame, bbox):
     return (np.clip(np.array(bbox), 0, 1) * normVals).astype(int)
 
 def sliding_window(image, step, window_size):
-    """Generates 512x512 windows for inference."""
-    for y in range(0, image.shape[0] - window_size + 1, step):
-        for x in range(0, image.shape[1] - window_size + 1, step):
-            yield x, y, image[y:y + window_size, x:x + window_size]
+    """Generates 512x288 windows for inference."""
+    for y in range(0, image.shape[0] - window_size[1] + 1, step[1]):
+        for x in range(0, image.shape[1] - window_size[0] + 1, step[0]):
+            yield x, y, image[y:y + window_size[1], x:x + window_size[0]]
 
 # Main loop
 with dai.Device(pipeline) as device:
@@ -89,17 +89,17 @@ with dai.Device(pipeline) as device:
         frame = colorFrame.getCvFrame()
 
         # Sliding window parameters
-        step_size = 256  # Overlapping sliding window step
-        window_size = 512  # Size of each window to send for inference
+        step_size = (256, 144)  # Overlapping sliding window step for 512x288 chunks
+        window_size = (512, 288)  # Size of each window to send for inference
 
         for x, y, window in sliding_window(frame, step_size, window_size):
             # Preprocess the window for the neural network
             try:
-                window_resized = cv2.resize(window, (512, 512), interpolation=cv2.INTER_AREA)
+                window_resized = cv2.resize(window, window_size, interpolation=cv2.INTER_AREA)
                 img_frame = dai.ImgFrame()
                 img_frame.setData(window_resized.tobytes())
-                img_frame.setWidth(512)
-                img_frame.setHeight(512)
+                img_frame.setWidth(window_size[0])
+                img_frame.setHeight(window_size[1])
                 img_frame.setType(dai.ImgFrame.Type.BGR888p)
 
                 # Send the window to the neural network
