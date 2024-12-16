@@ -4,7 +4,7 @@ import numpy as np
 import blobconverter
 
 class TextHelper:
-    def __init__(self) -> None:
+    def __init__(self):
         self.bg_color = (0, 0, 0)
         self.color = (255, 255, 255)
         self.text_type = cv2.FONT_HERSHEY_SIMPLEX
@@ -26,7 +26,6 @@ camRgb = pipeline.create(dai.node.ColorCamera)
 camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
 camRgb.setPreviewSize(3840, 2160)  # 4K resolution
 camRgb.setInterleaved(False)
-camRgb.initialControl.setManualFocus(145)
 camRgb.setFps(2)
 
 # Full 4K output
@@ -84,7 +83,10 @@ with dai.Device(pipeline) as device:
 
     while True:
         # Get the full 4K frame
-        frame = qColor.get().getCvFrame()
+        colorFrame = qColor.tryGet()
+        if colorFrame is None:
+            continue
+        frame = colorFrame.getCvFrame()
 
         # Sliding window parameters
         step_size = 256  # Overlapping sliding window step
@@ -92,25 +94,28 @@ with dai.Device(pipeline) as device:
 
         for x, y, window in sliding_window(frame, step_size, window_size):
             # Preprocess the window for the neural network
-            img_frame = dai.ImgFrame()
-            img_frame.setData(window.tobytes())
-            img_frame.setWidth(window_size)
-            img_frame.setHeight(window_size)
-            img_frame.setType(dai.ImgFrame.Type.BGR888p)
+            try:
+                window_resized = cv2.resize(window, (512, 512), interpolation=cv2.INTER_AREA)
+                img_frame = dai.ImgFrame()
+                img_frame.setData(window_resized.tobytes())
+                img_frame.setWidth(512)
+                img_frame.setHeight(512)
+                img_frame.setType(dai.ImgFrame.Type.BGR888p)
 
-            # Send the window to the neural network
-            scale_manip.inputImage.setBlocking(True)
-            scale_manip.inputImage.send(img_frame)
+                # Send the window to the neural network
+                device.getInputQueue("nn").send(img_frame)
 
-            # Get detections for the window
-            inDet = qDet.tryGet()
-            if inDet:
-                detections = inDet.detections
-                for det in detections:
-                    expandDetection(det)
-                    bbox = frameNorm(frame, (det.xmin, det.ymin, det.xmax, det.ymax))
-                    c.rectangle(frame, (bbox[0] + x, bbox[1] + y), (bbox[2] + x, bbox[3] + y))
-                    c.putText(frame, f"{int(det.confidence * 100)}%", (bbox[0] + 10 + x, bbox[1] + 20 + y))
+                # Get detections for the window
+                inDet = qDet.tryGet()
+                if inDet:
+                    detections = inDet.detections
+                    for det in detections:
+                        expandDetection(det)
+                        bbox = frameNorm(frame, (det.xmin, det.ymin, det.xmax, det.ymax))
+                        c.rectangle(frame, (bbox[0] + x, bbox[1] + y), (bbox[2] + x, bbox[3] + y))
+                        c.putText(frame, f"{int(det.confidence * 100)}%", (bbox[0] + 10 + x, bbox[1] + 20 + y))
+            except Exception as e:
+                print(f"Error processing window: {e}")
 
         # Display the full frame with bounding boxes
         cv2.imshow("4K Image", frame)
